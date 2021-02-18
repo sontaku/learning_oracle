@@ -207,8 +207,10 @@ CREATE TABLE EMP05 AS SELECT * FROM EMP WHERE 1=0;
 DECLARE
     V_ROWS EMP05%ROWTYPE;
 BEGIN
-    SELECT * INTO V_ROWS
-    FROM EMP01 WHERE EMPNO = 7369;
+    SELECT * 
+        INTO V_ROWS
+    FROM EMP01 
+    WHERE EMPNO = 7369;
     
     INSERT INTO EMP05 VALUES V_ROWS;
     COMMIT;
@@ -265,6 +267,78 @@ SELECT * FROM EMP;
 --emp table의 empno 입력시 해당하는 (v_empno || '의 부서명은 ' || v_dname) 출력
 --deptno=10 : ACCOUNTING 출력, deptno=20 : RESEARCH 출력, 그 외는 알아서 생각해보기
 
+SELECT * FROM TAB;
+SELECT * FROM EMP;
+SELECT * FROM DEPT;
+
+
+DROP TABLE EMP01;
+CREATE TABLE EMP01 AS SELECT * FROM EMP;
+
+DROP TABLE EMP06;
+CREATE TABLE EMP06 AS SELECT * FROM EMP WHERE 1=0;
+SELECT * FROM EMP06;
+
+DECLARE
+    V_EMP06 EMP01%ROWTYPE;
+BEGIN
+    SELECT E.EMPNO, D.DNAME
+        INTO V_EMP06.EMPNO, V_EMP06.DNAME
+    FROM EMP E, DEPT D
+    WHERE E.DEPTNO = D.DEPTNO AND E.EMPNO = &V;
+    
+    DBMS_OUTPUT.PUT_LINE(V_EMPNO || '의 부서명은 ' || V_DNAME);
+END;
+/
+
+
+DECLARE
+    V_EMP06 EMP01%ROWTYPE;
+    V_EMPNO EMP01.EMPNO%TYPE;
+    V_DNAME VARCHAR2(16);
+BEGIN
+    SELECT EMPNO, DEPTNO
+        INTO V_EMP06.EMPNO, V_EMP06.DEPTNO
+    FROM EMP
+    WHERE EMPNO = &V;
+    
+    IF(V_EMP06.DEPTNO = 10) THEN 
+        V_DNAME := 'ACCOUNTING';
+    ELSIF(V_EMP06.DEPTNO = 20) THEN 
+        V_DNAME := 'RESEARCH';
+    END IF;
+    
+    V_EMPNO := V_EMP06.EMPNO;
+    DBMS_OUTPUT.PUT_LINE(V_EMPNO || '의 부서명은 ' || V_DNAME);
+END;
+/
+
+--강사님 버전
+SET SERVEROUTPUT ON
+
+
+DECLARE
+    V_EMPNO EMP.EMPNO%TYPE;
+    V_DEPTNO EMP.DEPTNO%TYPE;
+    V_DNAME VARCHAR2(10);
+BEGIN
+    SELECT EMPNO, DEPTNO
+        INTO V_EMPNO, V_DEPTNO
+    FROM EMP
+    WHERE EMPNO = &V;
+    
+    IF(V_DEPTNO = 10) THEN
+        V_DNAME := 'ACCOUNTING';
+    ELSIF(V_DEPTNO = 20) THEN
+        V_DNAME := 'RESEARCH';
+    ELSE
+        V_DNAME := 'NONE';
+    END IF;
+    
+    DBMS_OUTPUT.PUT_LINE(V_EMPNO || '의 부서명은 ' || V_DNAME);
+END;
+/
+
 
 --10.반복문
 /* 
@@ -289,13 +363,37 @@ end loop;
 --1~5까지 출력
 --loop 
 
+--루프문안에서 변수를 할당해 줄 수 없어, 디클래어 비긴 사이에 해줘야 한다.
+DECLARE
+    NUM NUMBER(2) := 1;
+BEGIN
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(NUM);
+        NUM := NUM + 1;
+        EXIT WHEN NUM > 5;
+    END LOOP;
+END LOOP;
+/
 
 --while
+DECLARE
+    NUM NUMBER(2) := 1;
+BEGIN
+    WHILE NUM <= 5 LOOP
+        DBMS_OUTPUT.PUT_LINE(NUM);
+        NUM := NUM + 1;
+    END LOOP;
+END LOOP;
+/
 
-
---for
-
-
+--for (가장 많이 활용함)
+DECLARE
+BEGIN
+    FOR NUM IN 1..5 LOOP
+        DBMS_OUTPUT.PUT_LINE(NUM);
+    END LOOP;
+END LOOP;
+/
 --11.?사번 입력시 해당하는 사원의 이름 음절 수 만큼 *로 표현하기 
 --length() / 결합 연산자 : ||
 /*
@@ -316,4 +414,57 @@ end loop;
 --예상 결과
 SMITH님의 이름 길이 수는 *****
 */
+
+--DECLARE
+--    NUM NUMBER(2) := 1;
+--BEGIN
+--    WHILE NUM <= 5 LOOP
+--        DBMS_OUTPUT.PUT_LINE(NUM);
+--        NUM := NUM + 1;
+--    END LOOP;
+--END LOOP;
+
+DECLARE
+BEGIN
+    FOR VAR IN 1..5 LOOP
+             DBMS_OUTPUT.PUT_LINE('*');            
+    END LOOP;
+END LOOP;
+/
+
+DECLARE
+    V_EMPNO EMP.EMPNO%TYPE;
+    V_ENAME EMP.ENAME%TYPE;
+BEGIN
+    SELECT EMPNO, ENAME
+        INTO V_EMPNO, V_ENAME
+    FROM EMP
+    WHERE EMPNO = &V;
+
+    DBMS_OUTPUT.PUT(V_ENAME || '님의 이름 길이 수는 ');
+    FOR VAR IN 1..LENGTH(V_ENAME) LOOP
+        dbms_output.put('*');
+    END LOOP;
+    dbms_output.NEW_line;
+END;
+/
+
+--강사님 버전
+DECLARE
+    V_EMPNO EMP.EMPNO%TYPE := &NO;
+    V_ENAME EMP.ENAME%TYPE;
+    V_NUMBER NUMBER;
+    V_CHAR VARCHAR2(10);
+BEGIN
+    SELECT ENAME, LENGTH(ENAME)
+        INTO V_ENAME, V_NUMBER
+    FROM EMP
+    WHERE EMPNO = V_EMPNO;
+
+    FOR I IN 1..V_NUMBER LOOP
+        V_CHAR := V_CHAR || '*';
+    END LOOP;
+    dbms_output.put_line(V_ENAME || '님의 이름 길이 수는 ' || V_CHAR);
+END LOOP;
+/
 
