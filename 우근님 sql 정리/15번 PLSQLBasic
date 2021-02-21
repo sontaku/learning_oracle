@@ -1,0 +1,302 @@
+# PLSQL Basic 
+
+##  : PL/SQL(Procedural Language extension to SQL)  => 절차 지향적인 언어
+
+
+
+#### - 개발 방식
+
+        - 이름 없이 개발 : 익명 프로시저
+        - 프로시저라는 타이틀로 개발 - 이름(재사용) 프로시저
+        - 함수라는 타이틀 개발 - 이름(재사용) 프로시저
+
+
+#### - 장점
+
+    - 여러번 사용 또는 다수의 SQL 문장을 하나로 처리 (장점이 있다)
+        - DB 자체 언어로 컴파일 , 실행속도 향상
+        - 예시
+        회원가입 -> 활동 -> 탈퇴
+        그러면 이때 탈퇴한 회원 정보는 어떻게 관리 할건가?
+        경우의 수 1 : DB에서 완벽하게 삭제   =>탈퇴를 할 시 바로 데이터 삭제
+            -  경우의 수 2 : 백업 테이블에 보관     =>탈퇴하고 난뒤에도 3개월간 아이디 보관 
+                PLSQL로 고객 데이터를 삭제시 자동으로 백업 테이블에 저장하는 기능
+
+
+
+
+#### 필수 세팅
+
+``` D
+-SET SERVEROUTPUT ON //프로시저 데이터 출력을 보여주기 위해서 실행을 시켜야한다.
+```
+
+
+
+#### 필수 암기
+	- 할당(대입연산자);=
+	- 문법 (선언 , 시작 , 끝)
+	    DECLARE => 선언
+	    BEGIN => 시작
+	    END => 끝
+
+
+
+#### 문법 :
+
+```D
+DECLARE =>   //선언
+ NO NUMBER;  //변수 선언
+BEGIN => //시작
+    NO := 10; 
+    dbms_output.put_line(NO);  //dbms.output.put_line(NO); => System.out.println처럼 출력할때 사용
+END; => //끝
+/				
+```
+
+
+
+#### 변수 두개를 붙있때 사용  || , 구분을 한다.
+
+```D
+DECLARE
+ NO NUMBER;
+BEGIN
+    NO := 10;
+    NO := NO /0;  //숫자를 0으로 나눌수 없기 때문에 오류 발생 : "divisor is equal to zero"
+    dbms_output.put_line('결과1'||NO);  => || 문자열과 변수를 같이 사용 할때 구분하기 위해 사용
+    dbms_output.put_line('결과2');
+    dbms_output.put_line('결과3');
+END;
+/
+```
+
+
+
+#### PLSQL 예외처리 :
+
+``` mariadb
+DECLARE    -- NO 가 NUMBER라고 선언 => 변수타입 선언해주는거랑 같다
+ NO NUMBER;
+BEGIN
+    BEGIN        -- BGEIN END 사이에서는 내부적으로 실행되어야 할 커리들이 실행이 되어야한다.
+    NO := 10;   -- SQL에선 := 연산자가 = 이콜 연산자이다.
+    NO := NO /0;  -- 10을 0으로 나눌수가 없기 때문에 예외처리가 된다.
+    dbms_output.put_line('결과1'||NO);
+    EXCEPTION -- 예외가 발생 (예외를 받을게) 
+        WHEN OTHERS THEN -- 예외 받았어 어떤 예외 OTHERS라는 예외 / WHEN OTHERS THEN = EXCEPTION E 처럼.
+        dbms_output.put_line('예외처리 성공');  				-- 모든 예외를 처리해줄수있다.
+    END;
+    BEGIN
+    dbms_output.put_line('결과2');
+    dbms_output.put_line('결과3');
+    END;
+END;
+/
+```
+
+
+
+
+
+#### 중첩 블록 내부에서 선언된 변수 : 
+
+#### 중첩된 블록 제일 안쪽에서 선언된 변수라면, 그 안에서만(Begin 구문) 사용할 수 있는 로컬변수!
+
+```D
+DECLARE 
+    V_GLOBAL VARCHAR2(10) := 'GLOBAL';   //전역 변수 = 전체 부분에서 사용할수 있다.
+BEGIN
+    DECLARE 
+     V_LOCAL VARCHAR2(10) := 'LOCAL';	//지역 변수 = 첫번재 Begin구분에서만 사용
+    BEGIN
+        dbms_output.put_line(V_GLOBAL);
+        dbms_output.put_line(V_LOCAL);
+    END;
+    dbms_output.put_line(v_global);     //v_global =전역 변수이기 때문에 전체 구문에서 사용할수있다.  
+    //--dbms_output.put_line(V_LOCAL);	//v_LOCAL = 지역변수이기 때문에 지역을 벗어나 사용하게 되면 오류가 뜬다.
+									    //컴파일언어라, 절차지향이라도, 코드에서 에러가 뜨면, 컴파일 자체가 안됨
+    									//dbms_output.put_line(V_LOCAL); -- 로컬은 내부이기에, 출력 불가.
+END;
+/
+```
+
+
+
+#### emp01 table 컬럼 활용 %type 학습  =  그 컬럼의 타입으로 지정
+
+```D
+DROP TABLE EMP01;
+CREATE TABLE EMP01 AS SELECT * FROM EMP;
+
+//사번으로 사원번호, 이름, 급여 검색 -> 출력
+//SELECT EMPNO, ENAME, SAL FROM EMP01 WHERE EMPNO = 번호;
+//선언구 -> 변수3개 -> BEGIN : SELECT -> 선언된 변수에 할당 -> 출력 -> 종료
+DECLARE
+    V_EMPNO EMP01.EMPNO%TYPE;   //EMPNO%TYPE이기 때문에 V_EMPNO = NUMBER 타입으로 지정
+    V_ENAME EMP01.ENAME%TYPE;	//ENAME%TYPE이기 때문에 V_ENAME = VARCHAR2 타입으로 지정
+    V_SAL EMP01.SAL%TYPE;       //SAL%TYPE이기 때문에 V_SAL = NUMBER 타입으로 지정
+BEGIN
+    SELECT EMPNO, ENAME, SAL
+        INTO V_EMPNO,V_ENAME, V_SAL
+    FROM EMP01
+    WHERE EMPNO = 7369;
+    
+    DBMS_OUTPUT.PUT_LINE(V_EMPNO || ' ' || V_ENAME || ' ' || V_SAL);
+END;
+/
+```
+
+
+
+
+
+## Part 2 : RowType => 복합 데이터 (모든 데이터 타입이 가능하다.)
+
+**하나 이상의 데이터값을 갖는 데이터 타입으로 배열과 비슷한 역할을 하고 재사용이 가능합니다.**
+
+**%ROWTYPE데이터 형과, PL/SQL테이블과 레코드가 복합 데이터 타입에 속합니다.**
+
+
+
+#### 예제 :
+
+```D
+DROP TABLE EMP05;
+CREATE TABLE EMP05 AS SELECT * FROM EMP01 WHERE 1=0;  //빈 테이블을 생성 하기 => Where 1 = 0; 
+DECLARE
+    V_ROW EMP05%ROWTYPE;    //EMP05%ROWTYPE : NUMBER 타입도 가능하고 VARCHAR2 타입도 가능하다 즉 / 모든 타입이 가능
+BEGIN
+    SELECT * INTO V_ROW
+    FROM EMP01 WHERE EMPNO = 7369;
+    INSERT INTO EMP05 VALUES V_ROW;
+    COMMIT; //영구저장 꼭 해줘야한다.
+END;
+/
+SELECT * FROM EMP05;
+```
+
+
+
+
+
+
+
+## Part 3 : 조건식 
+
+#### 1. 단일 조건식 : 하나의 조건식을 사용
+	if(조건) then
+		조건이 true인 경우 실행되는 블록
+	end if;
+#### 단일 조건식 예제 )
+
+```D
+DROP TABLE EMP01;
+CREATE TABLE EMP01 AS SELECT * FROM EMP;
+DECLARE
+    V_EMP01 EMP%ROWTYPE;
+    TOTAL_SAL NUMBER(7,2);
+BEGIN
+    SELECT EMPNO,ENAME ,SAL,COMM
+        INTO V_EMP01.EMPNO, V_EMP01.ENAME, V_EMP01.SAL, V_EMP01.COMM //EMP%ROWTYPE이라서 모든 타입의 데이터를 저장할수 있다.
+    FROM EMP01
+    WHERE ENAME = 'SMITH';
+    IF(V_EMP01.COMM IS NULL) THEN  //조건으로 COMM이 NULL이면 0으로 치환한다라는 조건을 주었다.
+        V_EMP01.COMM := 0;
+        TOTAL_SAL :=  V_EMP01.SAL *12 + V_EMP01.COMM;
+    END IF; //조건을 끝났다고 알려주기 위해서 => 꼭 조건이 끝났다면 END IF;로 조건식을 끝내주어야한다.
+    dbms_output.put_line(TOTAL_SAL); 
+END;
+/
+```
+
+
+
+#### 2. 다중 조건 : 두개 이상의 조건식을 사용
+	if(조건1) then
+		조건1이 true인 경우 실행되는 블록 
+	elsif(조건2) then
+		조건2가 true인 경우 실행되는 블록
+	end if; 
+
+#### 다중 조건식 예제 )
+
+```mariadb
+-- MY
+DROP TABLE DEPT01;
+DROP TABLE EMP01;
+CREATE TABLE DEPT01 AS SELECT * FROM DEPT;
+CREATE TABLE EMP01 AS SELECT * FROM EMP;
+SELECT * FROM EMP01;
+DECLARE
+    V_DEPTNO EMP01.DEPTNO%TYPE;   -- V_DEPTNO = NUMBER 타입의 빈 변수로 생성
+    V_DNAME VARCHAR2(10);         -- V_DNAME = VARCHAR2 타입의 데이터가(10)인 빈 변수로 생성
+BEGIN
+    SELECT DEPTNO           
+        INTO V_DEPTNO             -- 여기서 부터는  DEPTNO 사용 끝 D_DEPTNO만 사용 (IF문에서도) 
+    FROM EMP01
+    WHERE EMPNO = &EMPNO;   
+     
+    IF(V_DEPTNO = 10)THEN         -- V_DEPTNO = EMPNO(프라이머리키)로 생성된 행의 DEPTNO값 
+        V_DNAME := 'ACCOUNTING';  -- EMPNO 7369 == DEPTNO = 20
+    ELSIF(V_DEPTNO = 20)THEN
+        V_DNAME := 'RESEARCH';
+    ELSE
+        V_DNAME := 'NONE';
+    END IF;
+    dbms_output.put_line(V_DEPTNO||'부서명은 '||V_DNAME);
+END;
+/
+```
+
+
+
+
+
+## Part 4 : PLSQL의 입력 값
+
+#### PLSQL에 입력값 : &지정명  : 데이터를 직접 입력을 받아서 삽입해주는 기능
+
+#### 기본 문법 :
+
+```mariadb
+SELECT *
+FROM EMP01
+WHERE JOB = &V;  -- NUMBER타입시 그냥 숫자를 입력하면 되고 , Varchar or Varchar2 시 단일 따움표'' 사용시 삽입 가능
+```
+
+
+
+
+
+### Part 5 : 반복문 
+
+#### 1.기본 문법
+```D
+loop 
+	ps/sql 문장들
+	exit 조건;
+end loop;
+```
+
+#### 2.while 문법
+```D
+ while 조건식 loop
+ 	plsql 문장;
+ end loop;
+```
+
+#### 3.for 문법
+```D
+for 변수 in [reverse] start ..end loop
+	plsql문장
+end loop;
+```
+
+
+
+
+
+
+
+
